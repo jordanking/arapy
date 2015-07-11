@@ -7,9 +7,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from xml.etree.cElementTree import iterparse
 
+import numpy as np
 import re as re
 import codecs
 import arapy.normalization as norm
+import csv
 
 # TODO import arapy?
 
@@ -130,7 +132,19 @@ def save_noun_phrases(xml_mada_fn, out_fn):
             outfile.write('#ENDDOC#\n')
 
 def save_noun_phrase_graph(xml_mada_fn, out_fn, window = 5):
-    """ TODO """
+    """ TODO make the mentions build in place (2 passes?)"""
+
+    # edges (nodeid, nodeid, dist)
+    edges = []
+
+    # vertices (long hash(str) : str (noun phrase))
+    vertices = {}
+
+    # mentions list
+    mentions_list = []
+
+    # distance to add edges at
+    distance = 10
 
     # open the output file    
     outfile = codecs.open(out_fn, 'w', "utf-8")
@@ -147,13 +161,13 @@ def save_noun_phrase_graph(xml_mada_fn, out_fn, window = 5):
     # get the root element
     event, root = context.next()
 
+    # document token tracking
+    tokens_so_far = 0
+
     for event, elem in context:
         
         # parse each sentence
         if event == 'end' and elem.tag == mp+'out_seg':
-
-            # construct the sentence, then write once per sentence
-            sent = ''
 
             # should just be one segment_info per out_seg
             # parse each chunk in segment, looking for noun phrases
@@ -165,8 +179,14 @@ def save_noun_phrase_graph(xml_mada_fn, out_fn, window = 5):
                     # we build noun phrases with underscores between words
                     noun_phrase = ''
 
+                    # noun phrase starts on next token
+                    noun_phrase_start = tokens_so_far + 1
+
                     # combine tokens into phrase
                     for tok in chunk.iter(mp+'tok'):
+
+                        tokens_so_far += 1
+
                         segment = tok.get('form0')
 
                         if segment[-1] == '+':
@@ -183,14 +203,45 @@ def save_noun_phrase_graph(xml_mada_fn, out_fn, window = 5):
                     # drop the last underscore and add to the np sentence
                     if noun_phrase[-1] == '_':
                         noun_phrase = noun_phrase[:-1]
-                    sent += noun_phrase+' '
 
-            # write the noun phrase sentence out (without last space)
-            outfile.write(sent[:-1]+'\n')
+                    # noun phrase ended on last token
+                    noun_phrase_end = tokens_so_far
+
+                    np_hash = hash(noun_phrase)
+                    vertices[np_hash] = noun_phrase
+
+                    mentions_list.append([np_hash, noun_phrase_start, noun_phrase_end])
+
+                else:
+                    for tok in chunk.iter(mp+'tok'):
+                        tokens_so_far += 1
 
             # don't keep the segment in memory
             root.find(mp+'out_doc').clear()
 
         elif event == 'end' and elem.tag == mp+'out_doc':
-            outfile.write('#ENDDOC#\n')
+            # add edges from last document
+            for start in range(0, len(mentions_list) - 10):
+                end = start + 10
+                head = start
+                tail = start + 1
+                in_range = True
+                while in_range:
+                    if abs(mentions_list[tail][1] - mentions_list[head][2]) <= distance:
+                        if (mentions_list[tail][1]-mentions_list[head][2] > 0):
+                            dist = mentions_list[tail][1]-mentions_list[head][2]
+                        else:
+                            dist = 0
+                        
+                        edges.append([mentions_list[head][0], mentions_list[tail][0], dist])
+                        edges.append([mentions_list[tail][0], mentions_list[head][0], dist])
 
+                        tail += 1
+
+                    else:
+                        in_range = False
+
+    np.savetxt("edges.csv", np.array(edges), delimiter=",", fmt='%i')
+    writer = csv.writer(open('vertices.csv','wb'))
+    for key, value in vertices.items():
+        writer.writerow([key, value.encode('utf-8')])                  
