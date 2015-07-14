@@ -132,7 +132,7 @@ def save_noun_phrases(xml_mada_fn, out_fn):
             outfile.write('#ENDDOC#\n')
 
 def save_noun_phrase_graph(xml_mada_fn, out_fn, window = 5):
-    """ TODO make the mentions build in place (2 passes?)"""
+    """ TODO figure out how expensive this is, implement in scala/spark next """
 
     # edges (nodeid, nodeid, dist)
     edges = []
@@ -201,8 +201,7 @@ def save_noun_phrase_graph(xml_mada_fn, out_fn, window = 5):
                             noun_phrase += segment + '_'
 
                     # drop the last underscore and add to the np sentence
-                    if noun_phrase[-1] == '_':
-                        noun_phrase = noun_phrase[:-1]
+                    noun_phrase = noun_phrase.strip('_')
 
                     # noun phrase ended on last token
                     noun_phrase_end = tokens_so_far
