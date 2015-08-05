@@ -189,6 +189,7 @@ def save_noun_phrase_graph(xml_mada_fn, out_fn, window = 5):
 
                         segment = tok.get('form0')
 
+                        # builds phrase
                         if segment[-1] == '+':
                             noun_phrase += segment[:-1]
                         elif segment[0] == '+':
