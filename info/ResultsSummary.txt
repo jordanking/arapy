@@ -1,0 +1,9 @@
+Current optimal parameterization for generating arabic word vectors (tested on wiki data):
+
+CBOW, window=5, dim=200, neg/samp=25/1e-4, 15+ iterations, lemmatized words
+
+Some work that I've read uses 100 dim, I think 200 is better for large data sets.
+
+In extremely large data, some papers hypothesize that skipgrams may work better. I have seen no evidence of this.
+
+Similarly, larger datasets may be able to take advantage of higher dimensional vectors.
