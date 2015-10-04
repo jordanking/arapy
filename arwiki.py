@@ -18,9 +18,9 @@ def parse_arwiki_dump(dump_in):
     Saves the text of the articles in a txt file with one sentence per line.
     returns the name of the output file
     """
-    dump_out = dump_in.split()[0]+
-               "_parsed"+
-               ".txt"
+    dump_out = (dump_in.split('.')[0]+
+                "_parsed"+
+                ".txt")
 
     # text tag that wiki uses to identify text content blocks
     text_tag = '{http://www.mediawiki.org/xml/export-0.10/}text'
@@ -59,27 +59,20 @@ def normalize_arwiki_parse(parsed_dump_file, ar_only=True, alif=True, hamza=True
     Normalizes a parsed wikidump and saves to a file w/ naming scheme
     returns the outfile name
     """
-    # regex for arabic chars
-    arabic = re.compile(ur'[^\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\.]+', re.UNICODE)
 
-    dump_out = dump_in.split()[0]+
+    dump_out = (parsed_dump_file.split('.')[0]+
                "_ar_only"+str(ar_only)+
                "_alif"+str(alif)+
                "_hamza"+str(hamza)+
                "_yaa"+str(yaa)+
                "_tashkil"+str(tashkil)+
-
-               ".txt"
+               ".txt")
 
     with open(parsed_dump_file, 'r') as infile:
         with open(dump_out, 'w') as outfile:
             for text in infile:
                 
-                if ar_only:
-                    # remove non-arabic chars              
-                    text = arabic.sub(' ', text)
-
-                text = normalize(text, alif=alif, hamza=hamza, yaa=yaa, tashkil=tashkil)
+                text = normalize(text, ar_only=ar_only, alif=alif, hamza=hamza, yaa=yaa, tashkil=tashkil)
                 
                 if text:
                     outfile.write(text.encode('utf8'))

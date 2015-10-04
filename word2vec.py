@@ -12,7 +12,8 @@ import sys
 
 def train_embeddings(infile, sg=1, size=100, window=8, min_count=5, sample=1e-4, hs=0, negative=25, iter=15):
     """
-    Saves the model to a file with
+    Saves the model to a file with the parameters in the name.
+    All of these functions work on any language of corpora
     Uses gensim's training parameters:
 
     Initialize the model from an iterable of `sentences`. Each sentence is a
@@ -65,7 +66,7 @@ def train_embeddings(infile, sg=1, size=100, window=8, min_count=5, sample=1e-4,
 
     # infile = sys.argv[1]
     # outfile = sys.argv[2]
-    outfile = infile.split()[0]+
+    outfile = (infile.split('.')[0]+
               "_sg"+str(sg)+
               "_size"+str(size)+
               "_window"+str(window)+
@@ -74,7 +75,7 @@ def train_embeddings(infile, sg=1, size=100, window=8, min_count=5, sample=1e-4,
               "_hs"+str(hs)+
               "_negative"+str(negative)+
               "_iter"+str(iter)+
-              ".bin"
+              ".bin")
 
     print("Files opened!")
     
@@ -108,7 +109,7 @@ def train_embeddings(infile, sg=1, size=100, window=8, min_count=5, sample=1e-4,
 
     return outfile
 
-def start_test_suite():
+def start_interactive_test_suite():
     """
     Loads a model, then allows interactive tests of:
     ac - not interactive, rather loads an analogy file and outputs the results
@@ -140,10 +141,10 @@ def start_test_suite():
     while True:
         
         # offer the menu
-        print '\n'
-        print 'Type ac to run accuracy tests.'
-        print 'Enter one word for neighbors, two for distance,'
-        print 'three for analogy, more for matching, q to quit.'
+        print('\n')
+        print('Type ac to run accuracy tests.')
+        print('Enter one word for neighbors, two for distance,')
+        print('three for analogy, more for matching, q to quit.')
         words = raw_input('Word: ')
 
         words = words.decode('UTF-8', 'replace')
@@ -152,7 +153,7 @@ def start_test_suite():
             break
 
         if words == 'ac':
-            print 'Please enter the questions file to test on:'
+            print('Please enter the questions file to test on:')
 
             questions = raw_input('File: ').strip()
 
@@ -169,19 +170,20 @@ def start_test_suite():
         elif len(words) == 1:
             try:
                 candidates = model.most_similar(words[0], topn=10)
-                print 'Candidates'.rjust(output_spacing), 'Cos Distance'.rjust(output_spacing)
+                print('Candidates'.rjust(output_spacing), 'Cos Distance'.rjust(output_spacing))
                 for word in candidates:
-                    print str(word[0].encode('UTF-8','replace')).rjust(output_spacing), str(word[1]).rjust(output_spacing)
+                    print(str(word[0].encode('UTF-8','replace')).rjust(output_spacing),
+                          str(word[1]).rjust(output_spacing))
             except KeyError as ke:
-                print ke.message.encode('utf-8','replace')
+                print(ke.message.encode('utf-8','replace'))
 
 
         # pair similarity
         elif len(words) == 2:
             try:
-                print 'Similarity is : ' + str(model.similarity(words[0],words[1]))
+                print('Similarity is : ' + str(model.similarity(words[0],words[1])))
             except KeyError as ke:
-                print ke.message.encode('utf-8','replace')
+                print(ke.message.encode('utf-8','replace'))
 
         # analogy
         elif len(words) == 3:
@@ -190,18 +192,19 @@ def start_test_suite():
                                                 negative = [words[0]], 
                                                 topn=10)
 
-                print 'Candidates'.rjust(output_spacing), 'Cos Distance'.rjust(output_spacing)
+                print('Candidates'.rjust(output_spacing), 'Cos Distance'.rjust(output_spacing))
                 for word in candidates:
-                    print str(word[0].encode('UTF-8', 'replace')).rjust(output_spacing), str(word[1]).rjust(output_spacing)
+                    print(str(word[0].encode('UTF-8', 'replace')).rjust(output_spacing), 
+                          str(word[1]).rjust(output_spacing))
             except KeyError as ke:
-                print ke.message.encode('utf-8','replace')
+                print(ke.message.encode('utf-8','replace'))
 
         # odd one out
         else:
             try:
-                print 'Odd one out: ' + str(model.doesnt_match(words).encode('utf-8', 'replace'))
+                print('Odd one out: ' + str(model.doesnt_match(words).encode('utf-8', 'replace')))
             except KeyError as ke:
-                print ke.message.encode('utf-8','replace')
+                print(ke.message.encode('utf-8','replace'))
 
 def start_query_expander():
     modelfile = raw_input('Please enter the binary model file path: ')
@@ -218,8 +221,7 @@ def start_query_expander():
     model = Word2Vec.load_word2vec_format(modelfile, binary=True)
 
     while True:
-        
-        print 
+         
         words = raw_input('\nEnter words to expand, q to quit: ')
 
         words = words.decode('UTF-8', 'replace')
@@ -240,8 +242,8 @@ def start_query_expander():
                 try:
                     expansion = expansion | set([x[0] for x in model.most_similar(word, topn=10)])
                 except KeyError as ke:
-                    print ke.message.encode('utf-8','replace')
+                    print(ke.message.encode('utf-8','replace'))
 
-            print 'Expansion'
+            print('Expansion')
             for word in expansion:
-                print str(word.encode('UTF-8','replace'))
+                print(str(word.encode('UTF-8','replace')))

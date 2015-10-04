@@ -8,13 +8,19 @@ from __future__ import print_function
 
 import re as re
 import codecs
+# regex for arabic chars
+arabic_charset = re.compile(ur'[^\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\.]+', re.UNICODE)
 
-def normalize(text, alif=True, hamza=True, yaa=True, tashkil=True):
+def normalize(text, ar_only=True, alif=True, hamza=True, yaa=True, tashkil=True):
     """
     Normalizes arabic text
+    Removes non-arabic chars by default
     Normalizes alif, hamza, and yaa by default
     Removes supplementary diacritics
     """
+    if ar_only:
+        text = normalize_charset(text)
+
     if alif:
         text = normalize_alif(text)
     if hamza:
@@ -38,6 +44,9 @@ def remove_tashkil(text):
 #####################
 ### Normalization ###
 #####################
+
+def normalize_charset(text):
+    return arabic_charset.sub(' ', text)
 
 def normalize_alif(text):
     """ replaces all forms of alif with ا """
