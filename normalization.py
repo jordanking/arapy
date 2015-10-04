@@ -10,7 +10,7 @@ import re
 import codecs
 
 # regex for arabic chars
-inv_arabic_charset = re.compile(ur'[^\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\u0030-\u0039\.]+', re.UNICODE)
+inv_arabic_charset = re.compile(ur'[^\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\u0030-\u0039\n\.]+', re.UNICODE)
 
 def normalize(text, ar_only=True, digits=False, alif=True, hamza=True, yaa=True, tashkil=True):
     """
