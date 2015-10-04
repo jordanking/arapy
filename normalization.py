@@ -6,20 +6,25 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import re as re
+import re
 import codecs
-# regex for arabic chars
-arabic_charset = re.compile(ur'[^\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\.]+', re.UNICODE)
 
-def normalize(text, ar_only=True, alif=True, hamza=True, yaa=True, tashkil=True):
+# regex for arabic chars
+inv_arabic_charset = re.compile(ur'[^\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\u0030-\u0039\.]+', re.UNICODE)
+
+def normalize(text, ar_only=True, digits=False, alif=True, hamza=True, yaa=True, tashkil=True):
     """
     Normalizes arabic text
     Removes non-arabic chars by default
+    Changes all numerals to # if digits is true, default false
     Normalizes alif, hamza, and yaa by default
     Removes supplementary diacritics
     """
     if ar_only:
         text = normalize_charset(text)
+
+    if digits:
+        text = normalize_digits(text)
 
     if alif:
         text = normalize_alif(text)
@@ -46,7 +51,11 @@ def remove_tashkil(text):
 #####################
 
 def normalize_charset(text):
-    return arabic_charset.sub(' ', text)
+    return inv_arabic_charset.sub(' ', text)
+
+def normalize_digits(text):
+    """ replaces all forms of numbers with # """
+    return re.sub(ur'[0123456789٠١٢٣٤٥٦٧٨٩]', ur'#', text)
 
 def normalize_alif(text):
     """ replaces all forms of alif with ا """
