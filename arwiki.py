@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-### Purpose: Arabic utility tools
+### Purpose: Tools to parse arwiki dumps
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -12,13 +12,12 @@ import codecs
 import xml.etree.cElementTree as etree
 from .normalization import normalize
 
-def parse_wiki_dump(dump_in, dump_out, norm=False):
+def parse_arwiki_dump(dump_in, dump_out, norm=False):
     """
     Reads in an unzipped arwiki dump.
     Saves the text of the articles in a txt file with one sentence per line.
     Norm=True normalizes the arabic script.
     """
-
     # regex for arabic chars
     arabic = re.compile(ur'[^\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\.]+', re.UNICODE)
 
@@ -58,3 +57,10 @@ def parse_wiki_dump(dump_in, dump_out, norm=False):
 
                     # keep memory free of previous branches of the xml tree
                     root.clear()
+
+def arwiki2normal(infile, outfile, True):
+    """
+    This code takes in and out args for a wiki xml dump in, 
+    and normalized arabic sentences out.
+    """
+    parse_arwiki_dump(infile, outfile, True)
