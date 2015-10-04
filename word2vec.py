@@ -10,8 +10,9 @@ from gensim.models import Word2Vec
 import logging
 import sys
 
-def startTraining():
+def train_embeddings(infile, sg=1, size=100, window=8, min_count=5, sample=1e-4, hs=0, negative=25, iter=15):
     """
+    Saves the model to a file with
     Uses gensim's training parameters:
 
     Initialize the model from an iterable of `sentences`. Each sentence is a
@@ -57,19 +58,30 @@ def startTraining():
     `iter` = number of iterations (epochs) over the corpus.
     """
 
-    if (len(sys.argv) < 2):
-        print("Please use this script with an input path and output path as args.")
-        print("In: Text file with 1 sentence per line")
-        print("Out: Binary word vector file")
+    # if (len(sys.argv) < 2):
+    #     print("Please use this script with an input path and output path as args.")
+    #     print("In: Text file with 1 sentence per line")
+    #     print("Out: Binary word vector file")
 
-    infile = sys.argv[1]
-    outfile = sys.argv[2]
+    # infile = sys.argv[1]
+    # outfile = sys.argv[2]
+    outfile = infile.split()[0]+
+              "_sg"+str(sg)+
+              "_size"+str(size)+
+              "_window"+str(window)+
+              "_min_count"+str(min_count)+
+              "_sample"+str(sample)+
+              "_hs"+str(hs)+
+              "_negative"+str(negative)+
+              "_iter"+str(iter)+
+              ".bin"
 
     print("Files opened!")
     
     # set up logging
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',level=logging.INFO)
 
+    # files are iterated over with this object
     class MySentences(object):
         def __init__(self, fname):
             self.fname = fname
@@ -80,28 +92,43 @@ def startTraining():
                 yield line.split()
 
     sentences = MySentences(infile)
-
     
-    model = Word2Vec(sentences, sg = 0, size = 100, window = 8, 
-                     min_count = 5, hs = 0, workers = 4, sample = 1e-4, 
-                     negative = 25, iter = 15)
-
-    #model.save(outfile + '.pbin')
+    model = Word2Vec(sentences, 
+                     sg = 0, 
+                     size = 100, 
+                     window = 8, 
+                     min_count = 5, 
+                     hs = 0, 
+                     workers = 4, 
+                     sample = 1e-4, 
+                     negative = 25, 
+                     iter = 15)
 
     model.save_word2vec_format(outfile, binary = True)
 
-def startTestSuite():
+    return outfile
+
+def start_test_suite():
+    """
+    Loads a model, then allows interactive tests of:
+    ac - not interactive, rather loads an analogy file and outputs the results
+    one word most similar queries
+    two word similarity measures
+    three word analogy queries
+    four+ word odd one out queries
+    """
+
     output_spacing = 25
 
     modelfile = raw_input('Please enter the binary model file path: ')# (or gn/en/ar): ')
     modelfile = modelfile.strip()
 
-    if modelfile == 'gn':
-        modelfile = '/Users/king96/Documents/Word2Vec/Models/google_news_vecs.bin'
-    elif modelfile == 'ar':
-        modelfile = '/Users/king96/Documents/Word2Vec/Models/ar_wiki_seg_vecs.bin'
-    elif modelfile == 'en':
-        modelfile = '/Users/king96/Documents/Word2Vec/Models/en_wiki_vecs.bin'
+    # if modelfile == 'gn':
+    #     modelfile = '/Users/king96/Documents/Word2Vec/Models/google_news_vecs.bin'
+    # elif modelfile == 'ar':
+    #     modelfile = '/Users/king96/Documents/Word2Vec/Models/ar_wiki_seg_vecs.bin'
+    # elif modelfile == 'en':
+    #     modelfile = '/Users/king96/Documents/Word2Vec/Models/en_wiki_vecs.bin'
 
     # set up logging
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
@@ -112,6 +139,7 @@ def startTestSuite():
 
     while True:
         
+        # offer the menu
         print '\n'
         print 'Type ac to run accuracy tests.'
         print 'Enter one word for neighbors, two for distance,'
@@ -175,12 +203,12 @@ def startTestSuite():
             except KeyError as ke:
                 print ke.message.encode('utf-8','replace')
 
-def startQueryExpander():
-    modelfile = raw_input('Please enter the binary model file path (gn for google news): ')
+def start_query_expander():
+    modelfile = raw_input('Please enter the binary model file path: ')
     modelfile = modelfile.strip()
 
-    if modelfile == 'gn':
-        modelfile = '/Users/king96/Documents/Word2Vec/Models/google_news_vecs.bin'
+    # if modelfile == 'gn':
+    #     modelfile = '/Users/king96/Documents/Word2Vec/Models/google_news_vecs.bin'
 
     # set up logging
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',

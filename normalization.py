@@ -9,17 +9,21 @@ from __future__ import print_function
 import re as re
 import codecs
 
-def normalize(text):
+def normalize(text, alif=True, hamza=True, yaa=True, tashkil=True):
     """
     Normalizes arabic text
-    Normalizes alif, hamza, and yaa
+    Normalizes alif, hamza, and yaa by default
     Removes supplementary diacritics
     """
-    text = normalize_alif(text)
-    text = normalize_hamza(text)
-    text = normalize_yaa(text)
+    if alif:
+        text = normalize_alif(text)
+    if hamza:
+        text = normalize_hamza(text)
+    if yaa:
+        text = normalize_yaa(text)
 
-    text = remove_tashkil(text)
+    if tashkil:
+        text = remove_tashkil(text)
 
     return text
 
@@ -92,11 +96,11 @@ def remove_kashida(text):
 ### Buckwalter transliteration ###
 ##################################
 
-def transString(string, reverse=0):
+def unicode_to_bw(string, reverse=0):
     """
     Given a Unicode string, transliterate into Buckwalter. 
     To go from Buckwalter back to Unicode, set reverse=1.
-    Temporarily taken from (git source that isn't me)
+    Partially taken from https://github.com/andyroberts/buckwalter2unicode
     """
 
     buck2uni = {"'": u"\u0621", # hamza-on-the-line
