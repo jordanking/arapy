@@ -7,11 +7,169 @@ from __future__ import absolute_import
 from __future__ import print_function
 from xml.etree.cElementTree import iterparse
 
+import arapy.normalization as norm
+import codecs
+import csv
 import numpy as np
 import re
-import codecs
-import arapy.normalization as norm
-import csv
+import requests
+import StringIO
+
+class Madamira:
+    url="http://localhost:8223"
+    headers = {'Content-Type': 'application/xml'}
+    xml_prefix="""<?xml version="1.0" encoding="UTF-8"?>
+    <!--
+      ~ Copyright (c) 2013. The Trustees of Columbia University in the City of New York.
+      ~ The copyright owner has no objection to the reproduction of this work by anyone for
+      ~ non-commercial use, but otherwise reserves all rights whatsoever.  For avoidance of
+      ~ doubt, this work may not be reproduced, or modified, in whole or in part, for commercial
+      ~ use without the prior written consent of the copyright owner.
+      -->
+
+    <madamira_input xmlns="urn:edu.columbia.ccls.madamira.configuration:0.1">
+        <madamira_configuration>
+            <preprocessing sentence_ids="false" separate_punct="true" input_encoding="UTF8"/>
+            <overall_vars output_encoding="UTF8" dialect="MSA" output_analyses="TOP" morph_backoff="NONE"/>
+            <requested_output>
+                <req_variable name="PREPROCESSED" value="true" />
+
+                <req_variable name="STEM" value="true" />
+                <req_variable name="GLOSS" value="true" />
+                <req_variable name="LEMMA" value="true" />
+                <req_variable name="DIAC" value="true" />
+
+                <req_variable name="ASP" value="true" />
+                <req_variable name="CAS" value="true" />
+                <req_variable name="ENC0" value="true" />
+                <req_variable name="ENC1" value="false" />
+                <req_variable name="ENC2" value="false" />
+                <req_variable name="GEN" value="true" />
+                <req_variable name="MOD" value="true" />
+                <req_variable name="NUM" value="true" />
+                <req_variable name="PER" value="true" />
+                <req_variable name="POS" value="true" />
+                <req_variable name="PRC0" value="true" />
+                <req_variable name="PRC1" value="true" />
+                <req_variable name="PRC2" value="true" />
+                <req_variable name="PRC3" value="true" />
+                <req_variable name="STT" value="true" />
+                <req_variable name="VOX" value="true" />
+
+                <req_variable name="BW" value="false" />
+                <req_variable name="SOURCE" value="false" />
+
+            </requested_output>
+            <tokenization>
+                <scheme alias="ATB" />
+                <scheme alias="ATB4MT" />
+                <scheme alias="MyD3">
+                    <!-- Same as D3 -->
+                    <scheme_override alias="MyD3"
+                                     form_delimiter="\u00B7"
+                                     include_non_arabic="true"
+                                     mark_no_analysis="false"
+                                     token_delimiter=" "
+                                     tokenize_from_BW="false">
+                        <split_term_spec term="PRC3"/>
+                        <split_term_spec term="PRC2"/>
+                        <split_term_spec term="PART"/>
+                        <split_term_spec term="PRC0"/>
+                        <split_term_spec term="REST"/>
+                        <split_term_spec term="ENC0"/>
+                        <token_form_spec enclitic_mark="+"
+                                         proclitic_mark="+"
+                                         token_form_base="WORD"
+                                         transliteration="UTF8">
+                            <normalization type="ALEF"/>
+                            <normalization type="YAA"/>
+                            <normalization type="DIAC"/>
+                            <normalization type="LEFTPAREN"/>
+                            <normalization type="RIGHTPAREN"/>
+                        </token_form_spec>
+                    </scheme_override>
+                </scheme>
+            </tokenization>
+        </madamira_configuration>
+
+        <in_doc id="in_doc">
+            <in_seg id="in_seg">"""
+    xml_suffix = """</in_seg>
+        </in_doc>
+
+    </madamira_input>"""
+    config_prefix="{urn:edu.columbia.ccls.madamira.configuration:0.1}"
+
+    # def __init__():
+    #     # nothing
+
+    def process(self, text):
+        """ Returns madamira xml output for a string input """
+
+        query = Madamira.xml_prefix + text + Madamira.xml_suffix
+
+        response = requests.post(Madamira.url, headers=Madamira.headers, data=query)
+
+        response.encoding = "utf8"
+
+        return MadamiraOutput(response.text)
+
+class MadamiraOutput:
+    def __init__(self, xmltext):
+        self.xml = xmltext
+
+    def sentences(self):
+
+        # madamira config prefix
+        mp=Madamira.config_prefix
+
+        # get an iterable TODO use raw string?
+        codecinfo = codecs.lookup("utf8")
+        wrapper = codecs.StreamReaderWriter(StringIO.StringIO(self.xml), codecinfo.streamreader, codecinfo.streamwriter)
+        context = iterparse(wrapper, events=("start", "end"))
+
+        # turn it into an iterator
+        context = iter(context)
+
+        # get the root element
+        event, root = context.next()
+
+        for event, elem in context:
+            
+            # parse each sentence
+            if event == 'end' and elem.tag == mp+'out_seg':
+
+                yield MadamiraSentence(elem)
+
+                # don't keep the sentence in memory
+                root.find(mp+'out_doc').clear()
+
+class MadamiraSentence:
+    def __init__(self, elem):
+        self.elem = elem
+
+    def words(self):
+        mp = Madamira.config_prefix
+
+        for word in self.elem.find(mp+'word_info').iter(mp+'word'):
+
+            yield MadamiraWord(word)
+
+class MadamiraWord:
+    def __init__(self, word):
+        self.word = word
+
+    def lemma(self):
+        mp = Madamira.config_prefix
+
+        # grab the lemma data
+        lemma = self.word.find(mp+'svm_prediction').find(mp+'morph_feature_set').get('lemma')
+
+        # strip down to the arabic script TODO
+        lemma = lemma.split('_')[0]
+
+        return lemma
+
 
 # window = 5
 
