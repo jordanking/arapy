@@ -7,13 +7,19 @@ from __future__ import absolute_import
 from __future__ import print_function
 from xml.etree.cElementTree import iterparse
 
+import arapy
 import arapy.normalization as norm
 import codecs
 import csv
 import numpy as np
+import os
 import re
 import requests
+import socket
 import StringIO
+import subprocess
+import time
+
 
 class Madamira:
     url="http://localhost:8223"
@@ -101,7 +107,37 @@ class Madamira:
     config_prefix="{urn:edu.columbia.ccls.madamira.configuration:0.1}"
 
     # def __init__():
-    #     # nothing
+        # nothing
+
+    def start_server(self):
+        cwd = os.getcwd()
+        print(os.path.dirname(arapy.__file__))
+        os.chdir(os.path.dirname(arapy.__file__)+"/resources/MADAMIRA-release-20140825-1.0/")
+
+        #java -Xmx2500m -Xms2500m -XX:NewRatio=3 -jar MADAMIRA-release-20140825-1.0.jar -s -msaonly
+        self.pid = subprocess.Popen(['java', 
+                                     '-Xmx2500m', 
+                                     '-Xms2500m', 
+                                     '-XX:NewRatio=3', '-jar', 
+                                     'MADAMIRA-release-20140825-1.0.jar', 
+                                     '-s', 
+                                     '-msaonly'])
+
+        print("Waiting for madamira to initialize.")
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('localhost',8223))
+        while(result != 0):
+            sock.close()
+            time.sleep(1)
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex(('localhost',8223))
+
+        os.chdir(cwd)
+
+    def stop_server(self):
+        self.pid.kill()
 
     def process(self, text):
         """ Returns madamira xml output for a string input """
@@ -116,7 +152,7 @@ class Madamira:
 
 class MadamiraOutput:
     def __init__(self, xmltext):
-        self.xml = xmltext
+        self.xml = xmltext.encode("utf8")
 
     def sentences(self):
 
@@ -124,9 +160,8 @@ class MadamiraOutput:
         mp=Madamira.config_prefix
 
         # get an iterable TODO use raw string?
-        codecinfo = codecs.lookup("utf8")
-        wrapper = codecs.StreamReaderWriter(StringIO.StringIO(self.xml), codecinfo.streamreader, codecinfo.streamwriter)
-        context = iterparse(wrapper, events=("start", "end"))
+        # wrapper = codecs.StreamReader(StringIO.StringIO(self.xml), "utf8")
+        context = iterparse(StringIO.StringIO(self.xml), events=("start", "end"))
 
         # turn it into an iterator
         context = iter(context)
@@ -155,6 +190,14 @@ class MadamiraSentence:
 
             yield MadamiraWord(word)
 
+    def chunks(self):
+        mp = Madamira.config_prefix
+
+        # should just be one segment_info per out_seg
+        # parse each chunk in segment, looking for noun phrases
+        for chunk in elem.find(mp+'segment_info').find(mp+'bpc').iter(mp+'chunk'):
+            yield MadamiraChunk(chunk)
+
 class MadamiraWord:
     def __init__(self, word):
         self.word = word
@@ -165,10 +208,48 @@ class MadamiraWord:
         # grab the lemma data
         lemma = self.word.find(mp+'svm_prediction').find(mp+'morph_feature_set').get('lemma')
 
-        # strip down to the arabic script TODO
-        lemma = lemma.split('_')[0]
+        # strip down to the arabic script
+        if not lemma:
+            return ""
+        elif len(lemma) == 0:
+            return ""
+        else:
+            norm_lemma = norm.normalize_charset(lemma).strip()
+            if len(norm_lemma) == 0:
+                return lemma
+            else:
+                return norm_lemma
 
-        return lemma
+
+class MadamiraChunk:
+    def __init__(self, chunk):
+        self.chunk = chunk
+
+    def type(self):
+        return self.get('type')
+
+    # def 
+
+    # def tokens():
+    #     # combine tokens into phrase
+    #     for tok in chunk.iter(mp+'tok'):
+    #         segment = tok.get('form0')
+
+    #         if segment[-1] == '+':
+    #             noun_phrase += segment[:-1]
+    #         elif segment[0] == '+':
+    #             # if it is a suffix prep, attach it to prev token
+    #             if len(noun_phrase) > 0:
+    #                 noun_phrase = noun_phrase[:-1] + segment[1:]
+    #             else:
+    #                 noun_phrase = segment[1:]
+    #         else:
+    #             noun_phrase += segment + '_'
+
+    #     # drop the last underscore and add to the np sentence
+    #     if noun_phrase[-1] == '_':
+    #         noun_phrase = noun_phrase[:-1]
+    #     sent += noun_phrase+' '
 
 
 # window = 5
