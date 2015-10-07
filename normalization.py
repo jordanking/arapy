@@ -38,6 +38,33 @@ def normalize(text, ar_only=True, digits=False, alif=True, hamza=True, yaa=True,
 
     return text
 
+def normalize_sentence_file(sentence_file, ar_only=True, digits=True, alif=True, hamza=True, yaa=True, tashkil=True):
+    """
+    Normalizes a file of sentences and saves to a file w/ parameterized naming scheme
+    returns the outfile name
+    """
+
+    outfile = (sentence_file.split('.')[0]+
+               "_ar_only"+str(ar_only)+
+               "_digits"+str(digits)+
+               "_alif"+str(alif)+
+               "_hamza"+str(hamza)+
+               "_yaa"+str(yaa)+
+               "_tashkil"+str(tashkil)+
+               ".txt")
+
+    with open(sentence_file, 'r') as infile:
+        with open(outfile, 'w') as outfile:
+            for text in infile:
+                text = text.decode('utf8')
+
+                text = normalize(text, ar_only=ar_only, digits=digits, alif=alif, hamza=hamza, yaa=yaa, tashkil=tashkil)
+                
+                if text:
+                    outfile.write(text.encode('utf8'))
+
+    return outfile
+
 def remove_tashkil(text):
     """ removes set of arabic supplementary diacritics """
     text = remove_harakat(text)
