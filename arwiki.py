@@ -43,8 +43,8 @@ def parse_arwiki_dump(dump_in):
                     # some text tags are empty
                     if text:
                         
-                        # move each sentence to a new line
-                        text = re.sub('\.', '\n', text)
+                        # move each sentence to a new line (rough regex)
+                        text = re.sub(ur'[.!?]$', '\n', text)
                         
                         if text:
                             outfile.write(text.encode('utf8'))

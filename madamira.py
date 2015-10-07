@@ -98,23 +98,27 @@ class Madamira:
             </tokenization>
         </madamira_configuration>
 
-        <in_doc id="in_doc">
-            <in_seg id="in_seg">"""
-    xml_suffix = """</in_seg>
-        </in_doc>
+        <in_doc id="in_doc">\n"""
+    xml_seg_start = """<in_seg id="in_seg">\n"""
+    xml_seg_end = """\n</in_seg>\n"""
+    xml_suffix = """</in_doc>
 
     </madamira_input>"""
     config_prefix="{urn:edu.columbia.ccls.madamira.configuration:0.1}"
 
     # def __init__():
         # nothing
+    def __enter__(self):
+        self.start_server()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop_server()
 
     def start_server(self):
         cwd = os.getcwd()
-        print(os.path.dirname(arapy.__file__))
         os.chdir(os.path.dirname(arapy.__file__)+"/resources/MADAMIRA-release-20140825-1.0/")
 
-        #java -Xmx2500m -Xms2500m -XX:NewRatio=3 -jar MADAMIRA-release-20140825-1.0.jar -s -msaonly
         self.pid = subprocess.Popen(['java', 
                                      '-Xmx2500m', 
                                      '-Xms2500m', 
@@ -142,9 +146,16 @@ class Madamira:
     def process(self, text):
         """ Returns madamira xml output for a string input """
 
-        query = Madamira.xml_prefix + text + Madamira.xml_suffix
+        query = StringIO.StringIO()
+        query.write(Madamira.xml_prefix)
+        for sentence in text:
+            query.write(Madamira.xml_seg_start)
+            query.write(sentence)
+            query.write(Madamira.xml_seg_end)
+        query.write(Madamira.xml_suffix)
+        query.seek(0)
 
-        response = requests.post(Madamira.url, headers=Madamira.headers, data=query)
+        response = requests.post(Madamira.url, headers=Madamira.headers, data=query.read())
 
         response.encoding = "utf8"
 
@@ -154,8 +165,7 @@ class MadamiraOutput:
     def __init__(self, xmltext):
         self.xml = xmltext.encode("utf8")
 
-    def sentences(self):
-
+    def docs(self):
         # madamira config prefix
         mp=Madamira.config_prefix
 
@@ -171,22 +181,33 @@ class MadamiraOutput:
 
         for event, elem in context:
             
-            # parse each sentence
-            if event == 'end' and elem.tag == mp+'out_seg':
+            # parse each doc
+            if event == 'end' and elem.tag == mp+'out_doc':
 
-                yield MadamiraSentence(elem)
+                yield MadamiraDoc(elem)
 
-                # don't keep the sentence in memory
-                root.find(mp+'out_doc').clear()
+                # don't keep the doc in memory
+                root.clear()#find(mp+'madamira_output').clear()
 
-class MadamiraSentence:
+class MadamiraDoc:
     def __init__(self, elem):
         self.elem = elem
+
+    def sentences(self):
+        mp = Madamira.config_prefix
+
+        for sentence in self.elem.iter(mp+'out_seg'):
+
+            yield MadamiraSentence(sentence)
+
+class MadamiraSentence:
+    def __init__(self, sentence):
+        self.sentence = sentence
 
     def words(self):
         mp = Madamira.config_prefix
 
-        for word in self.elem.find(mp+'word_info').iter(mp+'word'):
+        for word in self.sentence.find(mp+'word_info').iter(mp+'word'):
 
             yield MadamiraWord(word)
 
@@ -195,7 +216,7 @@ class MadamiraSentence:
 
         # should just be one segment_info per out_seg
         # parse each chunk in segment, looking for noun phrases
-        for chunk in elem.find(mp+'segment_info').find(mp+'bpc').iter(mp+'chunk'):
+        for chunk in sentence.find(mp+'segment_info').find(mp+'bpc').iter(mp+'chunk'):
             yield MadamiraChunk(chunk)
 
 class MadamiraWord:
@@ -220,6 +241,10 @@ class MadamiraWord:
             else:
                 return norm_lemma
 
+    def pos(self):
+        mp = Madamira.config_prefix
+
+        return self.word.find(mp+'svm_prediction').find(mp+'morph_feature_set').get('pos')
 
 class MadamiraChunk:
     def __init__(self, chunk):
@@ -230,26 +255,26 @@ class MadamiraChunk:
 
     # def 
 
-    # def tokens():
-    #     # combine tokens into phrase
-    #     for tok in chunk.iter(mp+'tok'):
-    #         segment = tok.get('form0')
+    def tokens():
+        # combine tokens into phrase
+        for tok in chunk.iter(mp+'tok'):
+            segment = tok.get('form0')
 
-    #         if segment[-1] == '+':
-    #             noun_phrase += segment[:-1]
-    #         elif segment[0] == '+':
-    #             # if it is a suffix prep, attach it to prev token
-    #             if len(noun_phrase) > 0:
-    #                 noun_phrase = noun_phrase[:-1] + segment[1:]
-    #             else:
-    #                 noun_phrase = segment[1:]
-    #         else:
-    #             noun_phrase += segment + '_'
+            if segment[-1] == '+':
+                noun_phrase += segment[:-1]
+            elif segment[0] == '+':
+                # if it is a suffix prep, attach it to prev token
+                if len(noun_phrase) > 0:
+                    noun_phrase = noun_phrase[:-1] + segment[1:]
+                else:
+                    noun_phrase = segment[1:]
+            else:
+                noun_phrase += segment + '_'
 
-    #     # drop the last underscore and add to the np sentence
-    #     if noun_phrase[-1] == '_':
-    #         noun_phrase = noun_phrase[:-1]
-    #     sent += noun_phrase+' '
+        # drop the last underscore and add to the np sentence
+        if noun_phrase[-1] == '_':
+            noun_phrase = noun_phrase[:-1]
+        sent += noun_phrase+' '
 
 
 # window = 5
