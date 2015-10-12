@@ -251,26 +251,26 @@ class MadamiraChunk:
     def type(self):
         return self.get('type')
 
-    def tokens():
-        # combine tokens into phrase
-        for tok in chunk.iter(mp+'tok'):
-            segment = tok.get('form0')
+    # def tokens():
+    #     # combine tokens into phrase
+    #     for tok in chunk.iter(mp+'tok'):
+    #         segment = tok.get('form0')
 
-            if segment[-1] == '+':
-                noun_phrase += segment[:-1]
-            elif segment[0] == '+':
-                # if it is a suffix prep, attach it to prev token
-                if len(noun_phrase) > 0:
-                    noun_phrase = noun_phrase[:-1] + segment[1:]
-                else:
-                    noun_phrase = segment[1:]
-            else:
-                noun_phrase += segment + '_'
+    #         if segment[-1] == '+':
+    #             noun_phrase += segment[:-1]
+    #         elif segment[0] == '+':
+    #             # if it is a suffix prep, attach it to prev token
+    #             if len(noun_phrase) > 0:
+    #                 noun_phrase = noun_phrase[:-1] + segment[1:]
+    #             else:
+    #                 noun_phrase = segment[1:]
+    #         else:
+    #             noun_phrase += segment + '_'
 
-        # drop the last underscore and add to the np sentence
-        if noun_phrase[-1] == '_':
-            noun_phrase = noun_phrase[:-1]
-        sent += noun_phrase+' '
+    #     # drop the last underscore and add to the np sentence
+    #     if noun_phrase[-1] == '_':
+    #         noun_phrase = noun_phrase[:-1]
+    #     sent += noun_phrase+' '
 
 
 
@@ -307,55 +307,56 @@ def transform_sentence_file(sentence_file, lemmas=True, pos=False, tokens=False)
             token_out = open(token_file, 'w')
 
         # read files into a list, or buffer the sentences one at a time, of sentences
-        sentence_list = sentence_file.read().splitlines()
+        # sentence_list = open(sentence_file).read().splitlines()
+        with open(sentence_file, 'r') as sentences:
+            for sentence in sentences:
+                out = m.process([sentence])
 
-        out = m.process(sentence_list)
+                for doc in out.docs():
+                    for sent in doc.sentences():
 
-        for doc in out.docs():
-            for sent in doc.sentences():
+                        for word in sent.words():
+                            if lemmas:
+                                lemma_buff.write(word.lemma())
+                                lemma_buff.write(" ")
+                            if pos:                        
+                                pos_buff.write(word.pos())
+                                pos_buff.write(" ")
 
-                for word in sent.words():
-                    if lemmas:
-                        lemma_buff.write(word.lemma())
-                        lemma_buff.write(" ")
-                    if pos:                        
-                        pos_buff.write(word.pos())
-                        pos_buff.write(" ")
+                        # for chunk in sent.chunks()
+                        #     if tokens:   
+                                # token_list = word.tokens()
+                                # for token in token_list:                    
+                                #     token_buff.write(token) # TODO
+                                #     token_buff.write(" ")
 
-                for chunk in sent.chunks()
-                    if tokens:   
-                        # token_list = word.tokens()
-                        # for token in token_list:                    
-                        #     token_buff.write(token) # TODO
-                        #     token_buff.write(" ")
+                        if lemmas:
+                            lemma_buff.seek(0)
+                            lemma_out.write(lemma_buff.read().rstrip().encode('utf8'))
+                            lemma_buff.close()
+                            lemma_buff = StringIO.StringIO()
 
-                if lemmas:
-                    lemma_buff.seek(0)
-                    lemma_out.write(lemma_buff.read().rstrip())
-                    lemma_buff.close()
-                    lemma_buff = StringIO.StringIO()
+                        if pos:
+                            pos_buff.seek(0)
+                            pos_out.write(pos_buff.read().rstrip().encode('utf8'))
+                            pos_buff.close()
+                            pos_buff = StringIO.StringIO()
 
-                if pos:
-                    pos_buff.seek(0)
-                    pos_out.write(pos_buff.read().rstrip())
-                    pos_buff.close()
-                    pos_buff = StringIO.StringIO()
+                        if tokens:
+                            token_buff.seek(0)
+                            token_out.write(token_buff.read().rstrip().encode('utf8'))
+                            token_buff.close()
+                            token_buff = StringIO.StringIO()
 
-                if tokens:
-                    token_buff.seek(0)
-                    token_out.write(token_buff.read().rstrip())
-                    token_buff.close()
-                    token_buff = StringIO.StringIO()
-
-        if lemmas:
-            lemma_buff.close()
-            lemma_out.close()
-        if pos:
-            pos_buff.close()
-            pos_out.close()
-        if tokens:
-            token_buff.close()
-            token_out.close()
+            if lemmas:
+                lemma_buff.close()
+                lemma_out.close()
+            if pos:
+                pos_buff.close()
+                pos_out.close()
+            if tokens:
+                token_buff.close()
+                token_out.close()
 
     return [lemma_file, pos_file, token_file]
 
