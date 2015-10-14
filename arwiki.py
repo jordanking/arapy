@@ -6,12 +6,13 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import arapy.normalization as norm
 import re
 import sys
 import codecs
 import xml.etree.cElementTree as etree
 
-def parse_arwiki_dump(dump_in, split_at_punc=False):
+def parse_arwiki_dump(dump_in, split_at_punc=False, remove_non_arabic=False):
     """
     Reads in an unzipped arwiki dump.
     Saves the text of the articles in a txt file with one sentence per line.
@@ -41,6 +42,9 @@ def parse_arwiki_dump(dump_in, split_at_punc=False):
                     
                     # some text tags are empty
                     if text:
+
+                        if remove_non_arabic:
+                            text = norm.normalize_charset(text)
                         
                         # move each sentence to a new line (rough regex)
                         if split_at_punc:
