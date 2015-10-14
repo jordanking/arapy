@@ -28,9 +28,19 @@ def translate_list(words, target, source='en'):
         formatted_words += "&q=" + urllib2.quote(word)
 
     # format the url for the get
+    logging.info("Translating: "+str(word))
     url = URL_MASK.format(GOOGLE_API_KEY, formatted_words, source, target)
     result = requests.get(url)
+
+    if not result.text:
+        logging.info("Google responded with no translations")
+        return []
+
     json_result = json.loads(result.text)
+
+    if not 'data' in json_result:
+        logging.info("Google result had no data element.")
+        return []
 
     # parse the result
     translations = []

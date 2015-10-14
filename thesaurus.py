@@ -13,6 +13,7 @@ import sys
 import json
 import requests
 import goslate
+import urllib2
 
 
 API_KEY = '80901dbb851efc07b4bd747ba3ead0ae' # API key is available from here - http://words.bighugelabs.com/getkey.php
@@ -32,19 +33,34 @@ def thesaurus(word, relation=None, ngram=0, ar=False, trans_with_google=False, t
     target_result_count is the number of words to return with
 
     returns a dictionary where keys are the requested relationships, and values are lists of ngrams matching that relationship
+    returns empty dictionary if the thesaurus didn't have any results
     """
 
     gs = None
     if ar:
         if trans_with_google:
-            word = trans.translate_list([word], 'en', 'ar')[0]
+            translations = trans.translate_list([word], 'en', 'ar')
+            if len(translations) > 0:
+                word = translations[0]
+            else:
+                logging.info("Couldn't translate word: "+str(word)+" to english")
+                return {}
         else:
             gs = goslate.Goslate()
             word = gs.translate(word, 'en', 'ar')
 
+    if not word:
+        logging.info("Translated word is empty.")
+        return {}
+
     # format and make the request
-    url = URL_MASK.format(word, API_KEY)
+    url = URL_MASK.format(urllib2.quote(word)   , API_KEY)
     result = requests.get(url)
+
+    if not result.text:
+        logging.info("Thesaurus had no info for word:"+str(word))
+        return {}
+
     json_result = json.loads(result.text)
 
     # our relationship dictionary
@@ -62,11 +78,16 @@ def thesaurus(word, relation=None, ngram=0, ar=False, trans_with_google=False, t
                 for w in json_result[pos][rel]:
 
                     # we only want so many results
-                    if word_count == 0 or word_count < target_result_count:
+                    if target_result_count == 0 or word_count < target_result_count:
 
                         if ar == 1:
                             if trans_with_google:
-                                w = trans.translate_list([w],'ar','en')[0]
+                                translations = trans.translate_list([w],'ar','en')[0]
+                                if len(translations) > 0:
+                                    w = translations[0]
+                                else:
+                                    logging.info("Couldn't translate word: "+str(w)+" to arabic")
+                                    return {}
                             else:
                                 w = gs.translate(w, 'ar', 'en')
 
@@ -74,9 +95,11 @@ def thesaurus(word, relation=None, ngram=0, ar=False, trans_with_google=False, t
                             if not rel in words:
                                 words[rel] = []
                             words[rel].append(w)
+                            word_count+=1
 
                     else:
                         # we have enough results
+                        print(words)
                         return words
     return words
 
