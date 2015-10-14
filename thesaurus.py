@@ -49,7 +49,7 @@ def thesaurus(word, relation=None, ngram=0, ar=False, target_result_count=0):
         return {}
 
     # format and make the request
-    url = URL_MASK.format(urllib2.quote(word)   , API_KEY)
+    url = URL_MASK.format(urllib2.quote(word.encode('utf-8')), API_KEY)
     result = requests.get(url)
 
     if not result.text:
