@@ -53,7 +53,7 @@ def thesaurus(word, relation=None, ngram=0, ar=False, target_result_count=0):
     result = requests.get(url)
 
     if not result.text:
-        logging.info("Thesaurus had no info for word:"+str(word))
+        logging.info("Thesaurus had no info for word:"+word.encode('utf-8'))
         return {}
 
     json_result = json.loads(result.text)
