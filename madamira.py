@@ -146,10 +146,12 @@ class Madamira:
 
         query = StringIO.StringIO()
         query.write(Madamira.xml_prefix)
+
         for sentence in text:
             query.write(Madamira.xml_seg_start)
             query.write(sentence)
             query.write(Madamira.xml_seg_end)
+
         query.write(Madamira.xml_suffix)
         query.seek(0)
 
@@ -158,6 +160,25 @@ class Madamira:
         response.encoding = "utf8"
 
         return MadamiraOutput(response.text)
+
+    def process_sentence(self, text):
+        """ Returns madamira xml output for a word string input """
+
+        query = StringIO.StringIO()
+        query.write(Madamira.xml_prefix)
+    
+        query.write(Madamira.xml_seg_start)
+        query.write(text)
+        query.write(Madamira.xml_seg_end)
+
+        query.write(Madamira.xml_suffix)
+        query.seek(0)
+
+        response = requests.post(Madamira.url, headers=Madamira.headers, data=query.read())
+
+        response.encoding = "utf8"
+
+        return [word for doc in MadamiraOutput(response.text).docs() for sent in doc.sentences() for word in sent.words()]
 
 class MadamiraOutput:
     def __init__(self, xmltext):
