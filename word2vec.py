@@ -10,7 +10,7 @@ from gensim.models import Word2Vec
 import logging
 import sys
 
-def train_embeddings(infile, sg=1, size=100, window=8, min_count=5, sample=1e-4, hs=0, negative=25, iter=15):
+def train_embeddings(infile, outprefix, sg=1, size=100, window=8, min_count=5, sample=1e-4, hs=0, negative=25, iter=15):
     """
     Saves the model to a file with the parameters in the name.
     All of these functions work on any language of corpora
@@ -66,7 +66,7 @@ def train_embeddings(infile, sg=1, size=100, window=8, min_count=5, sample=1e-4,
 
     # infile = sys.argv[1]
     # outfile = sys.argv[2]
-    outfile = (infile.split('.')[0]+
+    outfile = (outprefix + infile.split('.')[0]+
               "_sg"+str(sg)+
               "_size"+str(size)+
               "_window"+str(window)+
