@@ -122,7 +122,7 @@ def start_interactive_test_suite():
     output_spacing = 25
 
     modelfile = raw_input('Please enter the binary model file path: ')# (or gn/en/ar): ')
-    modelfile = modelfile.strip()
+    modelfile = modelfile.strip().strip('\'')
 
     # if modelfile == 'gn':
     #     modelfile = '/Users/king96/Documents/Word2Vec/Models/google_news_vecs.bin'
