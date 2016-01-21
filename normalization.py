@@ -44,7 +44,7 @@ def normalize_sentence_file(sentence_file, ar_only=True, digits=True, alif=True,
     returns the outfile name
     """
 
-    outfile = (sentence_file.split('.')[0]+
+    outfile_path = (sentence_file.split('.')[0]+
                "_ar_only"+str(ar_only)+
                "_digits"+str(digits)+
                "_alif"+str(alif)+
@@ -54,7 +54,7 @@ def normalize_sentence_file(sentence_file, ar_only=True, digits=True, alif=True,
                ".txt")
 
     with open(sentence_file, 'r') as infile:
-        with open(outfile, 'w') as outfile:
+        with open(outfile_path, 'w') as outfile:
             for text in infile:
                 text = text.decode('utf8')
 
@@ -63,7 +63,7 @@ def normalize_sentence_file(sentence_file, ar_only=True, digits=True, alif=True,
                 if text:
                     outfile.write(text.encode('utf8'))
 
-    return outfile
+    return outfile_path
 
 def remove_tashkil(text):
     """ removes set of arabic supplementary diacritics """
