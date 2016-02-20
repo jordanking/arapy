@@ -115,17 +115,19 @@ class Madamira:
 
     def start_server(self):
         cwd = os.getcwd()
-        os.chdir(os.path.dirname(arapy.__file__)+"/resources/MADAMIRA-release-20140825-1.0/")
+        os.chdir(os.path.dirname(arapy.__file__)+"/resources/MADAMIRA-release-20150421-2.1/")
 
         self.pid = subprocess.Popen(['java', 
                                      '-Xmx2500m', 
                                      '-Xms2500m', 
-                                     '-XX:NewRatio=3', '-jar', 
-                                     'MADAMIRA-release-20140825-1.0.jar', 
+                                     '-XX:NewRatio=3', 
+                                     '-jar', 
+                                     'MADAMIRA-release-20150421-2.1.jar', 
                                      '-s', 
                                      '-msaonly'])
 
         print("Waiting for madamira to initialize.")
+        time.sleep(10)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex(('localhost',8223))
@@ -140,6 +142,7 @@ class Madamira:
 
     def stop_server(self):
         self.pid.kill()
+        print("Shut down MADAMIRA.")
 
     def process(self, text):
         """ Returns madamira xml output for a string input """
@@ -265,6 +268,17 @@ class MadamiraWord:
 
         return self.word.find(mp+'svm_prediction').find(mp+'morph_feature_set').get('pos')
 
+    def tokens(self):
+        mp = Madamira.config_prefix
+
+        # grab the lemma data
+        tokens = []
+        for token in self.word.find(mp+'tokenized[@scheme=ATB]').iter(mp+'tok'):
+            tokens.append(token.get('form0'))
+
+        return tokens
+
+
 class MadamiraChunk:
     def __init__(self, chunk):
         self.chunk = chunk
@@ -295,7 +309,13 @@ class MadamiraChunk:
 
 
 
-def transform_sentence_file(sentence_file, lemmas=True, pos=False, tokens=False):
+def transform_sentence_file(sentence_file, 
+                            lemmaout="lemmas.txt",
+                            tokenout="token.txt",
+                            posout="pos.txt",
+                            lemmas=True,
+                            pos=False, 
+                            tokens=False):
     """returns filenames of lemmas and pos files"""
     with Madamira() as m:
 
@@ -304,33 +324,28 @@ def transform_sentence_file(sentence_file, lemmas=True, pos=False, tokens=False)
         lemma_buff = None
         if lemmas:
             lemma_buff = StringIO.StringIO()
-            lemma_file = (sentence_file.split('.')[0]+
-                          "_lemmas"+
-                          ".txt")
+            lemma_file = lemmaout
             lemma_out = open(lemma_file, 'w')
 
         pos_out = None
         pos_buff = None
         if pos:
             pos_buff = StringIO.StringIO()
-            pos_file = (sentence_file.split('.')[0]+
-                          "_pos"+
-                          ".txt")
+            pos_file = posout
             pos_out = open(pos_file, 'w')
 
         token_out = None
         token_buff = None
         if tokens:
             token_buff = StringIO.StringIO()
-            token_file = (sentence_file.split('.')[0]+
-                          "_token"+
-                          ".txt")
+            token_file = tokenout
             token_out = open(token_file, 'w')
 
         # read files into a list, or buffer the sentences one at a time, of sentences
         # sentence_list = open(sentence_file).read().splitlines()
         with open(sentence_file, 'r') as sentences:
             for sentence in sentences:
+
                 out = m.process([sentence])
 
                 for doc in out.docs():
@@ -343,6 +358,10 @@ def transform_sentence_file(sentence_file, lemmas=True, pos=False, tokens=False)
                             if pos:                        
                                 pos_buff.write(word.pos())
                                 pos_buff.write(" ")
+                            if tokens:
+                                for token in word.tokens():
+                                    token_buff.write(token)
+                                    token_buff.write(" ")
 
                         # for chunk in sent.chunks()
                         #     if tokens:   

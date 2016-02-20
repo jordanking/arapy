@@ -38,20 +38,20 @@ def normalize(text, ar_only=True, digits=False, alif=True, hamza=True, yaa=True,
 
     return text
 
-def normalize_sentence_file(sentence_file, ar_only=True, digits=True, alif=True, hamza=True, yaa=True, tashkil=True):
+def normalize_sentence_file(sentence_file, outfile_path="normal.txt", ar_only=True, digits=True, alif=True, hamza=True, yaa=True, tashkil=True):
     """
     Normalizes a file of sentences and saves to a file w/ parameterized naming scheme
     returns the outfile name
     """
 
-    outfile_path = (sentence_file.split('.')[0]+
-               "_ar_only"+str(ar_only)+
-               "_digits"+str(digits)+
-               "_alif"+str(alif)+
-               "_hamza"+str(hamza)+
-               "_yaa"+str(yaa)+
-               "_tashkil"+str(tashkil)+
-               ".txt")
+    # outfile_path = (sentence_file.split('.')[0]+
+    #                "_ar_only"+str(ar_only)+
+    #                "_digits"+str(digits)+
+    #                "_alif"+str(alif)+
+    #                "_hamza"+str(hamza)+
+    #                "_yaa"+str(yaa)+
+    #                "_tashkil"+str(tashkil)+
+    #                ".txt")
 
     with open(sentence_file, 'r') as infile:
         with open(outfile_path, 'w') as outfile:
