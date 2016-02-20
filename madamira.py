@@ -273,7 +273,7 @@ class MadamiraWord:
 
         # grab the lemma data
         tokens = []
-        for token in self.word.find(mp+'tokenized[@scheme=ATB]').iter(mp+'tok'):
+        for token in self.word.find(mp+"tokenized[@scheme='MyD3']").iter(mp+'tok'):
             tokens.append(token.get('form0'))
 
         return tokens
@@ -371,23 +371,27 @@ def transform_sentence_file(sentence_file,
                                 #     token_buff.write(" ")
 
                         if lemmas:
+
                             lemma_buff.seek(0)
                             lemma_out.write(lemma_buff.read().rstrip().encode('utf8'))
+                            lemma_out.write('\n')
                             lemma_buff.close()
                             lemma_buff = StringIO.StringIO()
 
                         if pos:
                             pos_buff.seek(0)
                             pos_out.write(pos_buff.read().rstrip().encode('utf8'))
+                            pos_out.write('\n')
                             pos_buff.close()
                             pos_buff = StringIO.StringIO()
 
                         if tokens:
                             token_buff.seek(0)
                             token_out.write(token_buff.read().rstrip().encode('utf8'))
+                            token_out.write('\n')
                             token_buff.close()
                             token_buff = StringIO.StringIO()
-
+                
             if lemmas:
                 lemma_buff.close()
                 lemma_out.close()
@@ -397,6 +401,7 @@ def transform_sentence_file(sentence_file,
             if tokens:
                 token_buff.close()
                 token_out.close()
+
 
     return [lemma_file, pos_file, token_file]
 
