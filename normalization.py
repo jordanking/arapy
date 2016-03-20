@@ -26,6 +26,7 @@ def normalize(text, ar_only=True, digits=False, alif=True, hamza=True, yaa=True,
     if digits:
         text = normalize_digits(text)
 
+
     if alif:
         text = normalize_alif(text)
     if hamza:

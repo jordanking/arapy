@@ -7,11 +7,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from gensim.models import Word2Vec
+from gensim.models.word2vec import LineSentence
 import logging
 import sys
 
 def train_embeddings(infile, outfile = "embedding.txt", sg=1, size=100, seed = 0, window=8, min_count=5, 
-                     sample=1e-4, hs=0, negative=25, iter=15):
+                     sample=1e-4, hs=0, negative=25, iterations=15):
     """
     Saves the model to a file with the parameters in the name.
     All of these functions work on any language of corpora
@@ -59,52 +60,34 @@ def train_embeddings(infile, outfile = "embedding.txt", sg=1, size=100, seed = 0
 
     `iter` = number of iterations (epochs) over the corpus.
     """
-
-    # if (len(sys.argv) < 2):
-    #     print("Please use this script with an input path and output path as args.")
-    #     print("In: Text file with 1 sentence per line")
-    #     print("Out: Binary word vector file")
-
-    # infile = sys.argv[1]
-    # outfile = sys.argv[2]
-    # outfile = (infile.split('.')[0]+
-    #           "_sg"+str(sg)+
-    #           "_size"+str(size)+
-    #           "_window"+str(window)+
-    #           "_min_count"+str(min_count)+
-    #           "_sample"+str(sample)+
-    #           "_hs"+str(hs)+
-    #           "_negative"+str(negative)+
-    #           "_iter"+str(iter)+
-    #           ".bin")
-
-    print("Files opened!")
-    
     # set up logging
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',level=logging.INFO)
 
     # files are iterated over with this object
-    class MySentences(object):
-        def __init__(self, fname):
-            self.fname = fname
-            self.errors = 0
+    # class MySentences(object):
+    #     def __init__(self, fname):
+    #         self.fname = fname
+    #         self.errors = 0
 
-        def __iter__(self):
-            for line in open(self.fname):
-                yield line.split()
+    #     def __iter__(self):
+    #         for line in open(self.fname):
+    #             yield line.split()
 
-    sentences = MySentences(infile)
+    # sentences = MySentences(infile)
+    sentences = LineSentence(infile)
+
     
     model = Word2Vec(sentences, 
-                     sg = 0, 
-                     size = 100, 
-                     window = 8, 
-                     min_count = 5, 
-                     hs = 0, 
+                     sg = sg, 
+                     size = size, 
+                     window = window, 
+                     min_count = min_count, 
+                     hs = hs, 
                      workers = 4, 
-                     sample = 1e-4, 
-                     negative = 25, 
-                     iter = 15)
+                     sample = sample,
+                     seed = seed,
+                     negative = negative, 
+                     iter = iterations)
 
     model.save_word2vec_format(outfile, binary = True)
 
