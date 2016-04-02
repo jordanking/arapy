@@ -140,7 +140,10 @@ class Madamira:
 
         os.chdir(cwd)
 
+        self.session = requests.Session()
+
     def stop_server(self):
+        self.session.close()
         self.pid.kill()
         print("Shut down MADAMIRA.")
 
@@ -158,7 +161,7 @@ class Madamira:
         query.write(Madamira.xml_suffix)
         query.seek(0)
 
-        response = requests.post(Madamira.url, headers=Madamira.headers, data=query.read())
+        response = self.session.post(Madamira.url, headers=Madamira.headers, data=query.read())
 
         response.encoding = "utf8"
 
