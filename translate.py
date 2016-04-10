@@ -16,10 +16,11 @@ import urllib2
 GOOGLE_API_KEY = 'AIzaSyAAScZ3-Ut-1sxn5gsSLzxzXJgzn3jGsN4'
 URL_MASK = 'https://www.googleapis.com/language/translate/v2?key={0}{1}&source={2}&target={3}'
 
-def translate_list(words, target, source='en'):
+def translate_list(words, target='ar', source='en'):
     """
     Translates a word with the google translate api
     Requires an API key from the google developers console
+    Target is the language target, ie 'ar'
     """
 
     # format the words for the url
@@ -32,13 +33,13 @@ def translate_list(words, target, source='en'):
     result = requests.get(url)
 
     if not result.text:
-        logging.info("Google responded with no translations")
+        logging.info("Google responded with no translations, check api key.")
         return []
 
     json_result = json.loads(result.text)
 
     if not 'data' in json_result:
-        logging.info("Google result had no data element.")
+        logging.info("Google result had no data element, check api key.")
         return []
 
     # parse the result

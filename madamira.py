@@ -20,9 +20,11 @@ import StringIO
 import subprocess
 import time
 
+MADAPORT = 8223
+#94223
 
 class Madamira:
-    url="http://localhost:8223"
+    url="http://localhost:" + str(MADAPORT)
     headers = {'Content-Type': 'application/xml'}
     xml_prefix="""<?xml version="1.0" encoding="UTF-8"?>
     <!--
@@ -130,13 +132,13 @@ class Madamira:
         time.sleep(10)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex(('localhost',8223))
+        result = sock.connect_ex(('localhost',MADAPORT))
         while(result != 0):
             sock.close()
             time.sleep(1)
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            result = sock.connect_ex(('localhost',8223))
+            result = sock.connect_ex(('localhost',MADAPORT))
 
         os.chdir(cwd)
 
